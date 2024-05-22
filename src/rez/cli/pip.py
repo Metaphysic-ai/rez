@@ -8,6 +8,11 @@ Install a pip-compatible python package, and its dependencies, as rez packages.
 from __future__ import print_function
 from argparse import REMAINDER
 import logging
+import json
+
+
+def parse_dict(value: str):
+    return json.loads(value.replace("\'", "\""))
 
 
 def setup_parser(parser, completions=False):
@@ -33,6 +38,16 @@ def setup_parser(parser, completions=False):
     parser.add_argument(
         "PACKAGE",
         help="package to install or archive/url to install from")
+    parser.add_argument(
+        "-cev", "--commands-env-vars", type=parse_dict,
+        help="Add new env vars to the 'commands' function of the automatically "
+        "created 'package.py' file"
+    )
+    parser.add_argument(
+        "-bcev", "--building-commands-env-vars", type=parse_dict,
+        help="Add new env vars to the 'commands' function of the automatically "
+        "created 'package.py' file at build time"
+    )
     parser.add_argument(
         "-e", "--extra", nargs=REMAINDER,
         help="extra args passthrough to pip install (overrides pre-configured args if specified)"
@@ -70,4 +85,6 @@ def command(opts, parser, extra_arg_groups=None):
         python_version=opts.py_ver,
         release=opts.release,
         prefix=opts.prefix,
+        commands_env_vars=opts.commands_env_vars,
+        building_commands_env_vars=opts.building_commands_env_vars,
         extra_args=opts.extra)

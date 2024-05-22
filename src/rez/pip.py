@@ -237,6 +237,7 @@ def find_pip_from_context(python_version, pip_version=None):
 
 def pip_install_package(source_name, pip_version=None, python_version=None,
                         mode=InstallMode.min_deps, release=False, prefix=None,
+                        commands_env_vars=None, building_commands_env_vars=None,
                         extra_args=None):
     """Install a pip-compatible python package as a rez package.
     Args:
@@ -251,6 +252,10 @@ def pip_install_package(source_name, pip_version=None, python_version=None,
             managed.
         release (bool): If True, install as a released package; otherwise, it
             will be installed as a local package.
+        commands_env_vars (dict): Additional env vars to include in the 'commands'
+            function.
+        building_commands_env_vars (dict): Additional env vars to include in the
+            'commands' function at build time.
         extra_args (List[str]): Additional options to the pip install command.
 
     Returns:
@@ -419,11 +424,18 @@ def pip_install_package(source_name, pip_version=None, python_version=None,
 
             # commands
             commands = []
-            commands.append("env.PYTHONPATH.append('{root}/python')")
+            if building_commands_env_vars:
+                commands.append("if building:")
+                commands += [f"    env.{name}.set('{value}')" for name, value in building_commands_env_vars.items()]
+                commands.append('')
 
+            commands.append("env.PYTHONPATH.append('{root}/python')")
             if tools:
                 pkg.tools = tools
                 commands.append("env.PATH.append('{root}/bin')")
+
+            if commands_env_vars:
+                commands += [f"env.{name}.set('{value}')" for name, value in commands_env_vars.items()]
 
             pkg.commands = '\n'.join(commands)
 
